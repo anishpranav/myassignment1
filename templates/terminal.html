@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Terminal - Web Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            overflow: hidden;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            padding: 1rem 2rem;
+            border-bottom: 2px solid #4f46e5;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            color: #60a5fa;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header .subtitle {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+
+        .status-bar {
+            background: #1f2937;
+            padding: 0.5rem 2rem;
+            border-bottom: 1px solid #374151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .current-path {
+            color: #34d399;
+            font-weight: bold;
+        }
+
+        .session-info {
+            color: #9ca3af;
+        }
+
+        .terminal-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .terminal-output {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            background: #0d1117;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .terminal-input-container {
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .prompt {
+            color: #58a6ff;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #c9d1d9;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            padding: 0.5rem 0;
+        }
+
+        .ai-toggle {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ai-toggle:hover {
+            background: #2ea043;
+            transform: translateY(-1px);
+        }
+
+        .ai-toggle.active {
+            background: #1f6feb;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(31, 111, 235, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(31, 111, 235, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(31, 111, 235, 0);
+            }
+        }
+
+        .command-line {
+            margin-bottom: 1rem;
+        }
+
+        .command {
+            color: #f0f6fc;
+            font-weight: bold;
+        }
+
+        .output {
+            color: #c9d1d9;
+            margin-left: 0;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            color: #f85149 !important;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #56d364 !important;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #d29922 !important;
+            font-weight: bold;
+        }
+
+        .loading {
+            color: #58a6ff;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0.3;
+            }
+        }
+
+        .welcome-message {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            border: 1px solid #4f46e5;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .welcome-message h2 {
+            color: #60a5fa;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-message p {
+            color: #9ca3af;
+            margin-bottom: 0.5rem;
+        }
+
+        .clear-btn {
+            background: #6e7681;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: #8b949e;
+        }
+
+        .shortcuts {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: rgba(31, 41, 55, 0.9);
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 1rem;
+            font-size: 11px;
+            color: #9ca3af;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+        }
+
+        .shortcuts h3 {
+            color: #60a5fa;
+            margin-bottom: 0.5rem;
+            font-size: 12px;
+        }
+
+        .shortcuts kbd {
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 3px;
+            padding: 0.1rem 0.3rem;
+            font-family: inherit;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.8rem 1rem;
+            }
+
+            .status-bar {
+                padding: 0.5rem 1rem;
+            }
+
+            .terminal-output {
+                padding: 1rem;
+            }
+
+            .terminal-input-container {
+                padding: 0.8rem 1rem;
+            }
+
+            .shortcuts {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                🖥️ Python Terminal
+            </h1>
+            <div class="subtitle">AI-Powered Command Line Interface</div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="current-path" id="currentPath">Loading...</div>
+            <div class="session-info">
+                <button class="clear-btn" onclick="clearSession()">Clear Session</button>
+            </div>
+        </div>
+
+        <!-- Terminal Container -->
+        <div class="terminal-container">
+            <!-- Terminal Output -->
+            <div class="terminal-output" id="terminalOutput">
+                <div class="welcome-message">
+                    <h2>🚀 Welcome to Python Terminal Web Interface</h2>
+                    <p><strong>Commands:</strong> ls, cd, mkdir, rm, cat, ps, top, sysinfo, help</p>
+                    <p><strong>AI Mode:</strong> Click "AI Mode" and type natural language commands</p>
+                    <p><strong>Examples:</strong> "show files", "create folder test", "go to documents"</p>
+                    <p><em>Running in safe virtual filesystem mode</em></p>
+                </div>
+            </div>
+
+            <!-- Terminal Input -->
+            <div class="terminal-input-container">
+                <div class="prompt" id="prompt">user@terminal:~$</div>
+                <input type="text" class="terminal-input" id="terminalInput"
+                    placeholder="Type a command or natural language query..." autocomplete="off">
+                <button class="ai-toggle" id="aiToggle" onclick="toggleAI()">AI Mode</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Info -->
+    <div class="shortcuts">
+        <h3>Keyboard Shortcuts</h3>
+        <p><kbd>Enter</kbd> - Execute command</p>
+        <p><kbd>Ctrl+L</kbd> - Clear terminal</p>
+        <p><kbd>Ctrl+C</kbd> - Cancel input</p>
+        <p><kbd>↑/↓</kbd> - Command history</p>
+    </div>
+
+    <script>
+        // Global state
+        let isAIMode = false;
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        // DOM elements
+        const terminalOutput = document.getElementById('terminalOutput');
+        const terminalInput = document.getElementById('terminalInput');
+        const currentPath = document.getElementById('currentPath');
+        const prompt = document.getElementById('prompt');
+        const aiToggle = document.getElementById('aiToggle');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            terminalInput.focus();
+            updateStatus();
+        });
+
+        // Input event handlers
+        terminalInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeCommand();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                navigateHistory(-1);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                navigateHistory(1);
+            } else if (e.ctrlKey && e.key === 'l') {
+                e.preventDefault();
+                clearTerminal();
+            } else if (e.ctrlKey && e.key === 'c') {
+                e.preventDefault();
+                terminalInput.value = '';
+            }
+        });
+
+        // Command execution
+        async function executeCommand() {
+            const command = terminalInput.value.trim();
+            if (!command) return;
+
+            // Add to history
+            commandHistory.push(command);
+            historyIndex = -1;
+
+            // Show command in output
+            addToOutput(`<span class="command">${getCurrentPrompt()} ${command}</span>`);
+
+            // Show loading
+            const loadingId = addToOutput('<span class="loading">Executing...</span>');
+
+            // Clear input
+            terminalInput.value = '';
+
+            try {
+                const endpoint = isAIMode ? '/api/ai' : '/api/execute';
+                const payload = isAIMode ? { query: command } : { command: command };
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                // Remove loading message
+                removeOutput(loadingId);
+
+                if (data.error) {
+                    addToOutput(`<span class="error">${data.error}</span>`);
+                } else {
+                    if (data.output) {
+                        addToOutput(`<div class="output">${data.output}</div>`);
+                    }
+                    updateStatus();
+                }
+
+            } catch (error) {
+                removeOutput(loadingId);
+                addToOutput(`<span class="error">Network error: ${error.message}</span>`);
+            }
+
+            // Scroll to bottom
+            scrollToBottom();
+        }
+
+        // Output management
+        function addToOutput(html) {
+            const outputId = 'output-' + Date.now() + '-' + Math.random();
+            const div = document.createElement('div');
+            div.className = 'command-line';
+            div.id = outputId;
+            div.innerHTML = html;
+            terminalOutput.appendChild(div);
+            return outputId;
+        }
+
+        function removeOutput(outputId) {
+            const element = document.getElementById(outputId);
+            if (element) {
+                element.remove();
+            }
+        }
+
+        function scrollToBottom() {
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        function clearTerminal() {
+            const welcomeMessage = document.querySelector('.welcome-message');
+            terminalOutput.innerHTML = '';
+            if (welcomeMessage) {
+                terminalOutput.appendChild(welcomeMessage);
+            }
+        }
+
+        // Command history navigation
+        function navigateHistory(direction) {
+            if (commandHistory.length === 0) return;
+
+            if (direction === -1) { // Up
+                if (historyIndex === -1) {
+                    historyIndex = commandHistory.length - 1;
+                } else if (historyIndex > 0) {
+                    historyIndex--;
+                }
+            } else { // Down
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                } else {
+                    historyIndex = -1;
+                    terminalInput.value = '';
+                    return;
+                }
+            }
+
+            terminalInput.value = commandHistory[historyIndex];
+        }
+
+        // AI mode toggle
+        function toggleAI() {
+            isAIMode = !isAIMode;
+
+            if (isAIMode) {
+                aiToggle.textContent = 'AI ON';
+                aiToggle.classList.add('active');
+                terminalInput.placeholder = 'Type in natural language (e.g., "create folder test")...';
+            } else {
+                aiToggle.textContent = 'AI Mode';
+                aiToggle.classList.remove('active');
+                terminalInput.placeholder = 'Type a command...';
+            }
+        }
+
+        // Status updates
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+
+                if (data.current_dir) {
+                    currentPath.textContent = data.current_dir;
+                    prompt.textContent = `user@terminal:${data.current_dir}$`;
+                }
+            } catch (error) {
+                console.error('Failed to update status:', error);
+            }
+        }
+
+        function getCurrentPrompt() {
+            return prompt.textContent || 'user@terminal:~$';
+        }
+
+        // Session management
+        async function clearSession() {
+            if (confirm('Clear terminal session? This will reset your virtual filesystem.')) {
+                try {
+                    await fetch('/api/clear');
+                    clearTerminal();
+                    addToOutput('<span class="success">Session cleared. Virtual filesystem reset.</span>');
+                    updateStatus();
+                } catch (error) {
+                    addToOutput(`<span class="error">Failed to clear session: ${error.message}</span>`);
+                }
+            }
+        }
+
+        // Keep input focused
+        document.addEventListener('click', function () {
+            terminalInput.focus();
+        });
+
+        // Prevent context menu on right click
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        });
+    </script>
+</body>
+
+</html>
