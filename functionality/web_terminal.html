@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Python Terminal</title>
+    <style>
+        body {
+            background: #1e1e1e;
+            color: #ffffff;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .terminal-container {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #444;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .terminal-header {
+            background: #383838;
+            margin: -20px -20px 20px -20px;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+            border-bottom: 1px solid #555;
+        }
+
+        .terminal-title {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            background: #1e1e1e;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+
+        .command-line {
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        .command-prompt {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .command-input-text {
+            color: #ffffff;
+            margin-left: 5px;
+        }
+
+        .command-output {
+            color: #cccccc;
+            margin-left: 20px;
+            white-space: pre-wrap;
+            font-family: inherit;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            background: #383838;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #555;
+        }
+
+        .prompt {
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        #commandInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+
+        #commandInput:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            padding: 2px 5px;
+        }
+
+        .loading {
+            color: #ffeb3b;
+        }
+
+        .error {
+            color: #f44336;
+        }
+
+        .success {
+            color: #4CAF50;
+        }
+
+        .ai-command {
+            color: #2196F3;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Terminal cursor animation */
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background-color: #4CAF50;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .terminal-container {
+                height: calc(100vh - 20px);
+                padding: 15px;
+            }
+
+            .terminal-header {
+                margin: -15px -15px 15px -15px;
+                padding: 12px 15px;
+            }
+
+            .terminal-title {
+                font-size: 16px;
+            }
+
+            #commandInput {
+                font-size: 16px;
+                /* Prevents zoom on iOS */
+            }
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+        }
+
+        .status-indicator.disconnected {
+            background: #f44336;
+            box-shadow: 0 0 5px rgba(244, 67, 54, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="terminal-container">
+        <div class="terminal-header">
+            <div class="terminal-title">🤖 AI-Powered Python Terminal</div>
+            <div style="font-size: 12px; color: #999; margin-top: 5px;">
+                Type 'help' for commands or 'ai [query]' for natural language commands
+            </div>
+            <div class="status-indicator" id="statusIndicator" title="Connection Status"></div>
+        </div>
+
+        <div id="terminalOutput" class="terminal-output">
+            <div class="command-line">
+                <span class="command-output success">Welcome to AI-Powered Python Terminal!</span>
+            </div>
+            <div class="command-line">
+                <span class="command-output">Type 'help' to see available commands.</span>
+            </div>
+            <div class="command-line">
+                <span class="command-output ai-command">Try: "ai create a folder called test" or "ai show me the
+                    files"</span>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <span class="prompt">terminal@web:~$</span>
+            <input type="text" id="commandInput" placeholder="Enter command..." autocomplete="off">
+            <span class="cursor" id="cursor"></span>
+        </div>
+    </div>
+
+    <script>
+        const terminalOutput = document.getElementById('terminalOutput');
+        const commandInput = document.getElementById('commandInput');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const cursor = document.getElementById('cursor');
+        let commandHistory = [];
+        let historyIndex = -1;
+        let isConnected = true;
+
+        // Focus input on page load and show cursor
+        commandInput.focus();
+
+        // Hide/show cursor based on input focus
+        commandInput.addEventListener('focus', function () {
+            cursor.style.display = 'inline-block';
+        });
+
+        commandInput.addEventListener('blur', function () {
+            cursor.style.display = 'none';
+        });
+
+        // Handle command input
+        commandInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                executeCommand();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                navigateHistory('up');
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                navigateHistory('down');
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                handleTabCompletion();
+            } else if (e.key === 'Escape') {
+                commandInput.value = '';
+                historyIndex = -1;
+            }
+        });
+
+        // Handle tab completion
+        function handleTabCompletion() {
+            const currentCommand = commandInput.value;
+            const commands = ['ls', 'pwd', 'cd', 'mkdir', 'touch', 'cat', 'echo', 'cp', 'mv', 'rm', 'clear', 'history', 'ps', 'top', 'whoami', 'date', 'sysinfo', 'ai', 'help', 'exit'];
+
+            const matches = commands.filter(cmd => cmd.startsWith(currentCommand.toLowerCase()));
+
+            if (matches.length === 1) {
+                commandInput.value = matches[0] + ' ';
+            } else if (matches.length > 1) {
+                addOutputLine('Available commands: ' + matches.join(', '), 'command-output');
+                scrollToBottom();
+            }
+        }
+
+        function navigateHistory(direction) {
+            if (commandHistory.length === 0) return;
+
+            if (direction === 'up') {
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    commandInput.value = commandHistory[commandHistory.length - 1 - historyIndex];
+                }
+            } else {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    commandInput.value = commandHistory[commandHistory.length - 1 - historyIndex];
+                } else if (historyIndex === 0) {
+                    historyIndex = -1;
+                    commandInput.value = '';
+                }
+            }
+        }
+
+        async function executeCommand() {
+            const command = commandInput.value.trim();
+            if (!command) return;
+
+            // Add to history
+            commandHistory.push(command);
+            historyIndex = -1;
+
+            // Display command in output
+            addCommandToOutput(command);
+
+            // Clear input
+            commandInput.value = '';
+
+            // Handle special local commands
+            if (command === 'clear') {
+                clearTerminal();
+                return;
+            }
+
+            // Show loading
+            const loadingElement = addOutputLine('Executing...', 'loading');
+            setConnectionStatus(false);
+
+            try {
+                const response = await fetch('/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command: command })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Remove loading message
+                loadingElement.remove();
+                setConnectionStatus(true);
+
+                if (data.output === 'EXIT') {
+                    addOutputLine('Terminal session ended.', 'success');
+                    commandInput.disabled = true;
+                    cursor.style.display = 'none';
+                    return;
+                }
+
+                if (data.output) {
+                    const outputClass = command.startsWith('ai ') ? 'ai-command' : 'command-output';
+                    addOutputLine(data.output, outputClass);
+                }
+
+            } catch (error) {
+                loadingElement.remove();
+                setConnectionStatus(false);
+                addOutputLine('Error: Failed to execute command - ' + error.message, 'error');
+                console.error('Error:', error);
+
+                // Try to reconnect after a delay
+                setTimeout(() => {
+                    setConnectionStatus(true);
+                }, 3000);
+            }
+
+            // Scroll to bottom and refocus input
+            scrollToBottom();
+            commandInput.focus();
+        }
+
+        function addCommandToOutput(command) {
+            const commandDiv = document.createElement('div');
+            commandDiv.className = 'command-line';
+            commandDiv.innerHTML = `
+                <span class="command-prompt">terminal@web:~$</span>
+                <span class="command-input-text">${escapeHtml(command)}</span>
+            `;
+            terminalOutput.appendChild(commandDiv);
+        }
+
+        function addOutputLine(text, className = 'command-output') {
+            const outputDiv = document.createElement('div');
+            outputDiv.className = 'command-line';
+            outputDiv.innerHTML = `<span class="${className}">${escapeHtml(text)}</span>`;
+            terminalOutput.appendChild(outputDiv);
+            return outputDiv;
+        }
+
+        function clearTerminal() {
+            terminalOutput.innerHTML = `
+                <div class="command-line">
+                    <span class="command-output success">Terminal cleared</span>
+                </div>
+            `;
+        }
+
+        function scrollToBottom() {
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function setConnectionStatus(connected) {
+            isConnected = connected;
+            if (connected) {
+                statusIndicator.classList.remove('disconnected');
+                statusIndicator.title = 'Connected';
+            } else {
+                statusIndicator.classList.add('disconnected');
+                statusIndicator.title = 'Disconnected';
+            }
+        }
+
+        // Keep input focused when clicking on terminal
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.terminal-container') && !commandInput.disabled) {
+                commandInput.focus();
+            }
+        });
+
+        // Prevent context menu on right click
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        });
+
+        // Handle page visibility change
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden && !commandInput.disabled) {
+                commandInput.focus();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // Ctrl+L to clear terminal
+            if (e.ctrlKey && e.key === 'l') {
+                e.preventDefault();
+                clearTerminal();
+            }
+
+            // Ctrl+C to interrupt (simulate)
+            if (e.ctrlKey && e.key === 'c') {
+                e.preventDefault();
+                addOutputLine('^C', 'error');
+                commandInput.value = '';
+                scrollToBottom();
+                commandInput.focus();
+            }
+        });
+
+        // Initialize
+        window.addEventListener('load', function () {
+            commandInput.focus();
+            addOutputLine('Terminal ready. Connection established.', 'success');
+            scrollToBottom();
+        });
+
+        // Auto-scroll new content
+        const observer = new MutationObserver(function () {
+            scrollToBottom();
+        });
+
+        observer.observe(terminalOutput, {
+            childList: true,
+            subtree: true
+        });
+    </script>
+</body>
+
+</html>
