@@ -7,9 +7,9 @@ class handler(BaseHTTPRequestHandler):
         body = self.rfile.read(content_length)
         try:
             data = json.loads(body)
-            command = data.get('command', '')
-            # Dummy: just echo the command for now
-            output = f'You entered: {command}'
+            query = data.get('query', '')
+            # Dummy: just echo the query for now
+            output = f'AI mode received: {query}'
             response = {'output': output}
         except Exception as e:
             response = {'error': str(e)}
