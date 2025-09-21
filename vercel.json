@@ -7,8 +7,20 @@
     ],
     "routes": [
         {
-            "src": "/api/.*",
-            "dest": "/api/$1.py"
+            "src": "/api/execute",
+            "dest": "/api/execute.py"
+        },
+        {
+            "src": "/api/ai",
+            "dest": "/api/ai.py"
+        },
+        {
+            "src": "/api/status",
+            "dest": "/api/status.py"
+        },
+        {
+            "src": "/api/clear",
+            "dest": "/api/clear.py"
         },
         {
             "src": "/",
